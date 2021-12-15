@@ -10,5 +10,5 @@ course_graph = Graph("2021-2022")
 course_graph.graph_dept("School of Humanities & Sciences", "MATH")
 ```
 
-An example, of Stanford math department courses graphed:
+Output:
 ![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/example.png)
