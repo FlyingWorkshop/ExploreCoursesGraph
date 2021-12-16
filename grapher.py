@@ -15,10 +15,16 @@ class Graph:
         cacher.cache_course_ids(connect, year)
         cacher.cache_departments(connect, year)
         cacher.cache_prereqs(connect, year)
+        cacher.cache_schools(connect, year)
 
-    def graph_dept(self, school: str, dept):
+    def graph_depts(self, *depts):
+        processed = {}
         prereqs = utils.load_prereqs(self.year)
-        processed = self._process(prereqs[school][dept], self.year)
+        schools = utils.load_schools(self.year)
+        for dept in depts:
+            school = schools[dept]
+            d = self._process(prereqs[school][dept], self.year)
+            processed.update(d)
         return self.display(processed)
 
     @staticmethod
@@ -36,7 +42,9 @@ class Graph:
     @staticmethod
     def display(processed: dict[str: str]):
         g = graphviz.Digraph()
+        g.graph_attr.update(rankdir="LR")
         for course_name, prereq_names in processed.items():
             for prereq_name in prereq_names:
-                g.edge(course_name, prereq_name)
+                g.edge(prereq_name, course_name)
+        g.render(f"output/{input('Choose a filename')}.gv")
         return g

@@ -1,5 +1,6 @@
 import json
 import os
+import datetime
 
 from tqdm import tqdm
 import explorecourses
@@ -7,6 +8,9 @@ import explorecourses
 import utils
 
 CACHE_FOLDER = "data"
+
+def _format_time(metatime):
+    return datetime.datetime.fromtimestamp(metatime).strftime('%Y-%m-%d-%H:%M')
 
 
 def _set_up_cache(year: str, filename: str) -> (str, bool):
@@ -30,8 +34,8 @@ def _set_up_cache(year: str, filename: str) -> (str, bool):
     if os.path.exists(filepath):
         stat = os.stat(filepath)
         print(f"Warning: a file already exists at '{filepath}'."
-              f"Last modified: {stat.st_mtime}"
-              f"Created: {stat.st_birthtime}")
+              f"\nLast modified: {_format_time(stat.st_mtime)}"
+              f"\nCreated: {_format_time(stat.st_birthtime)}")
         while (inp := input(f"Would you like to overwrite '{filepath}' [y|n]: ")) not in ("y", "n"):
             continue
         if inp == "n":
@@ -60,6 +64,19 @@ def cache_course_ids(connect: explorecourses.CourseConnection, year):
             index[key] = value
 
     # cache index
+    with open(filepath, "w") as f:
+        json.dump(index, f, indent=4)
+
+def cache_schools(connect: explorecourses.CourseConnection, year: str):
+    filepath, should_cache = _set_up_cache(year, "schools.json")
+    if not should_cache:
+        return
+
+    index = {}
+    for school in connect.get_schools(year):
+        for dept in school.departments:
+            index[dept.code] = str(school)
+
     with open(filepath, "w") as f:
         json.dump(index, f, indent=4)
 
@@ -106,4 +123,4 @@ def cache_prereqs(connect: explorecourses.CourseConnection, year: str):
 
 
 if __name__ == "__main__":
-    cache_prereqs(explorecourses.CourseConnection(), "2021-2022")
+    cache_schools(explorecourses.CourseConnection(), "2021-2022")

@@ -28,6 +28,8 @@ def load_departments(year: str) -> dict:
 def load_prereqs(year: str) -> dict:
     return _load_cache(year, "prereqs.json")
 
+def load_schools(year: str) -> dict:
+    return _load_cache(year, "schools.json")
 
 def _get_course(course_id: CourseID, year: str) -> explorecourses.Course:
     query = str(course_id)
