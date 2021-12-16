@@ -1,13 +1,13 @@
 # ExploreCoursesGraph
 
-Generates a graph of Stanford courses and their prerequisites. To graph multiple departments and for more advanced usage, please see the alpha branch.
+Generates a graph of Stanford courses and their prerequisites.
 
 # Usage
 ```python
 from grapher import Graph
 
 course_graph = Graph("2021-2022")
-course_graph.graph_dept("School of Humanities & Sciences", "MATH")
+course_graph.graph_depts("ECON")
 ```
 
 Output:
