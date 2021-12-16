@@ -11,7 +11,7 @@ course_graph.graph_depts("ECON")
 ```
 
 Output:
-![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/example.png)
+![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/econ.gv.png)
 
 
 # Limitations
