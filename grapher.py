@@ -60,7 +60,7 @@ class Graph:
                 colors[subject] = self.get_color()
             digraph.node(course_name, color=colors[subject], style="filled", fillcolor=colors[subject] + "32")
             for prereq_name in prereq_names:
-                subject = utils.get_subject(course_name)
+                subject = utils.get_subject(prereq_name)
                 if subject not in colors:
                     colors[subject] = self.get_color()
                 digraph.node(prereq_name, color=colors[subject], style="filled", fillcolor=colors[subject] + "32")
