@@ -7,11 +7,11 @@ Generates a graph of Stanford courses and their prerequisites.
 from grapher import Graph
 
 course_graph = Graph("2021-2022")
-course_graph.graph_depts("PHYSICS")
+course_graph.graph_depts("PHYSICS", "MATH")
 ```
 
 Output:
-![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/physics.gv.png)
+![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/math_physics.png)
 
 
 # Limitations
