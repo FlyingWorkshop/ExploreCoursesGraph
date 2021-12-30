@@ -11,7 +11,7 @@ course_graph.graph_depts("PHYSICS", "MATH")
 ```
 
 Output:
-![alt text](https://github.com/FlyingWorkshop/ExploreCoursesGraph/blob/main/showcase.gv.png)
+![alt text]
 
 
 # Limitations
