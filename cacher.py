@@ -13,7 +13,7 @@ def _format_time(metatime):
     return datetime.datetime.fromtimestamp(metatime).strftime('%Y-%m-%d-%H:%M')
 
 
-def _set_up_cache(year: str, filename: str) -> (str, bool):
+def _set_up_cache(year: str, filename: str, lazy=False) -> (str, bool):
     """
     Makes the relevant directories. If a cached file already exists, print
     out information about when it was last cached and prompt the user about
@@ -32,6 +32,9 @@ def _set_up_cache(year: str, filename: str) -> (str, bool):
 
     # check if filepath already cached
     if os.path.exists(filepath):
+        if lazy:
+            print("No new data was cached.")
+            return filepath, False
         stat = os.stat(filepath)
         print(f"Warning: a file already exists at '{filepath}'."
               f"\nLast modified: {_format_time(stat.st_mtime)}"
@@ -45,8 +48,8 @@ def _set_up_cache(year: str, filename: str) -> (str, bool):
     return filepath, True
 
 
-def cache_course_ids(connect: explorecourses.CourseConnection, year):
-    filepath, should_cache = _set_up_cache(year, "course_ids.json")
+def cache_course_ids(connect: explorecourses.CourseConnection, year: str, lazy=False):
+    filepath, should_cache = _set_up_cache(year, "course_ids.json", lazy)
     if not should_cache:
         return
 
@@ -67,8 +70,8 @@ def cache_course_ids(connect: explorecourses.CourseConnection, year):
     with open(filepath, "w") as f:
         json.dump(index, f, indent=4)
 
-def cache_schools(connect: explorecourses.CourseConnection, year: str):
-    filepath, should_cache = _set_up_cache(year, "schools.json")
+def cache_schools(connect: explorecourses.CourseConnection, year: str, lazy=False):
+    filepath, should_cache = _set_up_cache(year, "schools.json", lazy)
     if not should_cache:
         return
 
@@ -81,8 +84,8 @@ def cache_schools(connect: explorecourses.CourseConnection, year: str):
         json.dump(index, f, indent=4)
 
 
-def cache_departments(connect: explorecourses.CourseConnection, year: str):
-    filepath, should_cache = _set_up_cache(year, "departments.json")
+def cache_departments(connect: explorecourses.CourseConnection, year: str, lazy=False):
+    filepath, should_cache = _set_up_cache(year, "departments.json", lazy)
     if not should_cache:
         return
 
@@ -94,8 +97,8 @@ def cache_departments(connect: explorecourses.CourseConnection, year: str):
     with open(filepath, "w") as f:
         json.dump(index, f, indent=4)
 
-def cache_prereqs(connect: explorecourses.CourseConnection, year: str):
-    filepath, should_cache = _set_up_cache(year, "prereqs.json")
+def cache_prereqs(connect: explorecourses.CourseConnection, year: str, lazy=False):
+    filepath, should_cache = _set_up_cache(year, "prereqs.json", lazy)
     if not should_cache:
         return
 
@@ -123,4 +126,9 @@ def cache_prereqs(connect: explorecourses.CourseConnection, year: str):
 
 
 if __name__ == "__main__":
-    cache_schools(explorecourses.CourseConnection(), "2021-2022")
+    connect = explorecourses.CourseConnection()
+    for year in ["2019-2020", "2020-2021", "2021-2022"]:
+        # cache_schools(connect, year)
+        # cache_prereqs(connect, year)
+        # cache_departments(connect, year)
+        cache_course_ids(connect, year)

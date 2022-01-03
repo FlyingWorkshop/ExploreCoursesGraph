@@ -29,6 +29,7 @@ class Graph:
 
     def get_course_name(self, course_id) -> str:
         course_name = self._course_ids[course_id][0]  # defaults to the first name in the list of aliases
+        utils.get_subject(course_name)
         return course_name
 
     @staticmethod
@@ -39,7 +40,7 @@ class Graph:
         return rgb
 
 
-    def graph_depts(self, *depts: str, save_file=False):
+    def graph_depts(self, *depts: str, format="png", save_file=False):
         # get data
         graph_data = {}
         for dept in depts:
@@ -52,7 +53,7 @@ class Graph:
 
         # make digraph
         colors = {}
-        digraph = graphviz.Digraph(format="png")
+        digraph = graphviz.Digraph(format=format)
         digraph.graph_attr.update(rankdir="LR")
         for course_name, prereq_names in graph_data.items():
             subject = utils.get_subject(course_name)

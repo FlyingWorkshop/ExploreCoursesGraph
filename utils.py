@@ -39,27 +39,53 @@ def _get_course(course_id: CourseID, year: str) -> explorecourses.Course:
 def extract_aliases(course: explorecourses.Course):
     """
     >>> extract_aliases(_get_course(217009, "2021-2022"))  # CME 251: Geometric and Topological Data Analysis (CS 233)
-    ['CME251', 'CS233']
+    ['CME 251', 'CS 233']
     >>> extract_aliases(_get_course(223024, "2021-2022"))  # GSBGEN 535: Global Trip Leadership Skills (B)
-    ['GSBGEN535']
+    ['GSBGEN 535']
     >>> extract_aliases(_get_course(220309, "2021-2022"))  # OTOHNS 802: Terminal Graduate Student (TGR) Research
-    ['OTOHNS802']
+    ['OTOHNS 802']
     """
     aliases = [make_course_name(course)]
     data = load_departments(course.year)
     departments = data.keys()
-    matches = [re.sub(" ", "", m) for m in re.findall(r"\((.*?)\)", course.title)]
+    matches = [m for m in re.findall(r"\((.*?)\)", course.title)]
     for m in matches:
         if not any(dept in m for dept in departments):
             continue
         aliases += m.split(",")
     return aliases
 
+def inflate(course_name: str) -> str:
+    """
+    >>> inflate("AA100")
+    'AA 100'
+    >>> inflate("CME100")
+    'CME 100'
+    >>> inflate("AA136A")
+    'AA 136A'
+    >>> inflate("AA274A")
+    'AA 274A'
+    """
+    m = re.search(r"\d", course_name)
+    if m:
+        s = course_name[:m.start()] + " " + course_name[m.start():]
+        return s
+    else:
+        return course_name
 
 def get_course_ids(course_names, year: str) -> list[CourseID]:
+    """
+    >>> get_course_ids(['AA100', 'CME100', 'CME102', 'ME70'], "2019-2020")
+    ['103093', '202354', '104315', '104789']
+    >>> get_course_ids(['AA136A', 'AA236A'], "2021-2022")
+    ['103173', '103173']
+    >>> get_course_ids(['CS106A', 'CS109', 'EE178', 'ENGR108'], "2021-2022")
+
+    """
     results = []
     data = load_course_ids(year)
     for course_name in course_names:
+        course_name = inflate(course_name)
         for course_id, aliases in data.items():
             if course_name in aliases:
                 results.append(course_id)
@@ -82,23 +108,25 @@ def _valid_course_name(course_name: str, year) -> bool:
     False
     """
     data = load_course_ids(year)
-    return any(course_name in aliases for aliases in data.values())
+    return any(inflate(course_name) in aliases for aliases in data.values())
 
-def _get_subject(course_name: str):
+def get_subject(course_name: str):
     """
-    >>> _get_subject("MATH19")
+    >>> get_subject("MATH19")
     'MATH'
-    >>> _get_subject("MATH19-21")
+    >>> get_subject("MATH19-21")
+    'MATH'
+    >>> get_subject("MATH 19")
     'MATH'
     """
     subject = ""
     m = re.search(r"\d", course_name)
     if m:
         subject = course_name[:m.start()]
-    return subject
+    return subject.strip()
 
 def make_course_name(course: explorecourses.Course) -> str:
-    return f"{course.subject}{course.code}"
+    return f"{course.subject} {course.code}"
 
 def _unpack_interval(s: str) -> (int, int):
     """
@@ -143,6 +171,10 @@ def get_prereqs(course: explorecourses.Course) -> list[str]:
     ['CS161', 'STATS116']
     >>> get_prereqs(_get_course(221396, year))  # CS 182W: Ethics, Public Policy, and Technological Change (WIM)
     ['CS106A']
+    >>> get_prereqs(_get_course(220404, "2019-2020"))  # AA 102: Introduction to Applied Aerodynamics
+    ['AA100', 'CME100', 'CME102', 'ME70']
+    >>> get_prereqs(_get_course(103174, "2021-2022"))  # AA 136B: Spacecraft Design Laboratory (AA 236B)
+    ['AA136A', 'AA236A']
     """
     # trim description
     m = re.search(r"[Pp]rerequisites?(.*?)\.", course.description)
@@ -167,7 +199,7 @@ def get_prereqs(course: explorecourses.Course) -> list[str]:
             continue
 
         # basic strategy 2, handles cases like 'MATH 51, 52, 53'
-        m2 = f"{_get_subject(last)}{m}"
+        m2 = f"{get_subject(last)}{m}"
         if _valid_course_name(m2, course.year):
             prereqs.add(m2)
             continue
@@ -179,7 +211,7 @@ def get_prereqs(course: explorecourses.Course) -> list[str]:
             continue
 
         # basic strategy 4, minor typo in subject like 'STAT116' for 'STATS116'
-        subject = _get_subject(m)
+        subject = get_subject(m)
         if not _valid_department_code(subject, course.year):
             m = m.removeprefix(subject)
             for dept in departments:
@@ -195,7 +227,7 @@ def get_prereqs(course: explorecourses.Course) -> list[str]:
     hyphen_pattern = r"([a-zA-Z]+\s*\d+-\d+)"
     matches = [re.sub(" ", "", m.upper()) for m in re.findall(hyphen_pattern, s)]
     for m in matches:
-        subject = _get_subject(m)
+        subject = get_subject(m)
         start, end = _unpack_interval(m)
         for i in range(start, end):
             m = f"{subject}{i}"
