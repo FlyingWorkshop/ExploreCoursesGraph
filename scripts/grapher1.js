@@ -1,15 +1,13 @@
-// TODO: figure out how to pick correct url
+// TODO: figure out why graph doesn't display labels in chrome and only in incognito + safari?
 
 // construct the URL
-// let year = prompt("Enter an academic year: ", "2020-2021");
-let year = "2020-2021"
+let year = prompt("Enter an academic year: ", "2020-2021");
 let fileName = year + ".json"
 let urlBase = "https://flyingworkshop.github.io/ExploreCoursesGraph/cache/";
 let url = urlBase + fileName;
 
 // TODO: extend to multiple departments
-// let deptCode = prompt("Enter a valid department code: ", "MATH");
-let deptCode = "MATH"
+let deptCode = prompt("Enter a valid department code: ", "MATH");
 
 // TODO: convert IDs to course names ideally using the course number as the node ID
 // TODO: read up on graphviz documentation
@@ -35,6 +33,6 @@ $.getJSON(url, function(data) {
         }
     });
     let graphvizString = graphvizParts.join(" ") + "}"
-    alert(graphvizString);
+    // alert(graphvizString);
     d3.select("#graph").graphviz().renderDot(graphvizString);
 });
