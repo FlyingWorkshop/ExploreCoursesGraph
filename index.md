@@ -5,5 +5,5 @@
 <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
 <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
 <div id="graph" style="text-align: center;"></div>
-<script src="scripts/grapher1.js"></script>
+<script src="scripts/grapher.js"></script>
 </body>
