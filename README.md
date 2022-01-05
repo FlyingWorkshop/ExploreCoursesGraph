@@ -1,6 +1,6 @@
 # ExploreCoursesGraph
 
-Generates a graph of Stanford courses and their prerequisites. Try it out yourself at the [website](https://flyingworkshop.github.io/ExploreCoursesGraph/)! (NOTE: website is still in development)
+Generates a graph of Stanford courses and their prerequisites. Try it out yourself at the [website](https://flyingworkshop.github.io/ExploreCoursesGraph/)!
 
 # Usage
 ```python
