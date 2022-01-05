@@ -49,13 +49,13 @@ document.getElementById("myButton").addEventListener("click", function() {
              if (deptCodes.has(course_data.subject)) {
                  $.each(course_data.prerequisites, function (i, prereq) {
                      $.each(data, function(prereq_id, prereq_data) {
-                         if (!existingNodes.has(Number(course_id))) {
-                             let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
-                             graphvizParts.push(courseAttrs);
-                             existingNodes.add(Number(course_id));
-                         }
+                         if (prereq === Number(prereq_id) && prereq_id !== course_id) {
+                             if (!existingNodes.has(Number(course_id))) {
+                                 let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
+                                 graphvizParts.push(courseAttrs);
+                                 existingNodes.add(Number(course_id));
+                             }
 
-                         if (prereq === Number(prereq_id)) {
                              let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
                              graphvizParts.push(prereqAttrs);
                              existingNodes.add(prereq);
@@ -65,7 +65,7 @@ document.getElementById("myButton").addEventListener("click", function() {
                 });
              }
          });
-         
+
         let graphvizString = graphvizParts.join(" ") + "}";
         d3.select("#graph").graphviz().renderDot(graphvizString);
     });
