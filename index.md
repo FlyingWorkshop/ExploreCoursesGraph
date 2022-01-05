@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
 <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
 <div>
+    <p>Format queries using department codes in uppercase. To graph multiple departments, separate codes with ONLY a comma (no spaces), e.g. "MATH,ECON,PHIL"</p>
     <select name="years" id="years">
         <option value="2021-2022">2021-2022</option>
         <option value="2020-2021">2020-2021</option>
