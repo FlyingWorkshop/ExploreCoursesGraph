@@ -1,5 +1,3 @@
-// TODO: debug CS 2021-2022
-
 document.getElementById("mySearchBox")
     .addEventListener("keyup", function(event) {
     event.preventDefault();
@@ -12,16 +10,18 @@ function getRandomColorAttr() {
     return '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
 }
 
-function makeNodeAttrs(colorMap, year, course_id, course_data) {
+function makeNodeAttrs(colorMap, year, course_data) {
+    if (!colorMap.has(course_data.subject)) {
+        colorMap.set(course_data.subject, getRandomColorAttr());
+    }
     let course_url = 'https://explorecourses.stanford.edu/search?view=catalog&filter-coursestatus-Active=on&page=0&catalog=' +
         '&academicYear=' + year.slice(0, 4) + year.slice(5, 9) +
-        '&q=' + course_id +
+        '&q=' + course_data.course_id +
         '&collapse=';
-    return course_id + ' [' +
+    return course_data.course_id + ' [' +
         'label="' + course_data.subject + " " + course_data.code + '" ' +
         'tooltip="' + course_data.title + '" ' +
         'color="' + colorMap.get(course_data.subject) + '" ' +
-        'style="filled" ' +
         'fillcolor="' + colorMap.get(course_data.subject) + '32" ' +
         'URL="' + course_url + '"]';
 }
@@ -34,42 +34,38 @@ document.getElementById("myButton").addEventListener("click", function() {
 
     const text = document.getElementById("mySearchBox").value;
     const deptCodes = new Set(text.split(","));
-    // TODO: add support for queries with spaces i.e. "MATH, ECON" rather than only "MATH,ECON"
 
     const colorMap = new Map();
     for (const deptCode of deptCodes) {
         colorMap.set(deptCode, getRandomColorAttr());
     }
 
-    let prereqs = new Set();
-    let graphvizParts = ['digraph {graph [rankdir=LR]'];
+    let existingNodes = new Set();
+    let graphvizParts = ['digraph {graph [rankdir=LR, ranksep=0.3, nodesep=0.2] node [shape=record, style=filled] edge [arrowsize=0.5]'];
 
     $.getJSON(url, function(data) {
-        $.each(data, function(course_id, course_data) {
-            if (deptCodes.has(course_data.subject)) {
-                let nodeAttrs = makeNodeAttrs(colorMap, year, course_id, course_data);
-                let hasPrereqs = false;
-                $.each(course_data.prerequisites, function (i, prerequisite) {
-                    hasPrereqs = true;
-                    prereqs.add(prerequisite);
-                    graphvizParts.push(prerequisite + " -> " + course_data.course_id);
+
+         $.each(data, function(course_id, course_data) {
+             if (deptCodes.has(course_data.subject)) {
+                 $.each(course_data.prerequisites, function (i, prereq) {
+                     $.each(data, function(prereq_id, prereq_data) {
+                         if (!existingNodes.has(Number(course_id))) {
+                             let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
+                             graphvizParts.push(courseAttrs);
+                             existingNodes.add(Number(course_id));
+                         }
+
+                         if (prereq === Number(prereq_id)) {
+                             let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
+                             graphvizParts.push(prereqAttrs);
+                             existingNodes.add(prereq);
+                             graphvizParts.push(prereq + " -> " + course_id + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
+                         }
+                     });
                 });
-                if (hasPrereqs) {
-                    graphvizParts.push(nodeAttrs);
-                }
-            }
-        });
-
-        $.each(data, function(course_id, course_data) {
-            if (prereqs.has(Number(course_id))) {
-                if (!colorMap.has(course_data.subject)) {
-                    colorMap.set(course_data.subject, getRandomColorAttr());
-                }
-                let nodeAttrs = makeNodeAttrs(colorMap, year, course_id, course_data);
-                graphvizParts.push(nodeAttrs);
-            }
-        });
-
+             }
+         });
+         
         let graphvizString = graphvizParts.join(" ") + "}";
         d3.select("#graph").graphviz().renderDot(graphvizString);
     });
