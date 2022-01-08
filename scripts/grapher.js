@@ -26,47 +26,108 @@ function makeNodeAttrs(colorMap, year, course_data) {
         'URL="' + course_url + '"]';
 }
 
-document.getElementById("myButton").addEventListener("click", function() {
 
+function parseDepartmentQuery(text) {
+    let s = text.trim().toUpperCase();
+    const deptCodes = new Set();
+    for (const elem of s.split(",")) {
+        deptCodes.add(elem.trim());
+    }
+    return deptCodes;
+}
+
+document.getElementById("myButton").addEventListener("click", function() {
     // construct the URL
     let year = document.getElementById("years").value;
     let url = "https://flyingworkshop.github.io/ExploreCoursesGraph/cache/" + year + ".json";
 
     const text = document.getElementById("mySearchBox").value;
-    const deptCodes = new Set(text.split(","));
-
     const colorMap = new Map();
-    for (const deptCode of deptCodes) {
-        colorMap.set(deptCode, getRandomColorAttr());
-    }
-
     let existingNodes = new Set();
     let graphvizParts = ['digraph {graph [rankdir=LR, ranksep=0.3, nodesep=0.2] node [shape=record, style=filled] edge [arrowsize=0.5]'];
 
-    $.getJSON(url, function(data) {
+    if (/\d/.test(text)) {
+        let deptCode = text.match(/\D+/)[0];
+        let courseCode = text.slice(text.indexOf(deptCode) + deptCode.length, text.length);
+        deptCode = deptCode.trim().toUpperCase();
+        courseCode = courseCode.trim().toUpperCase();
 
-         $.each(data, function(course_id, course_data) {
-             if (deptCodes.has(course_data.subject)) {
-                 $.each(course_data.prerequisites, function (i, prereq) {
-                     $.each(data, function(prereq_id, prereq_data) {
-                         if (prereq === Number(prereq_id) && prereq_id !== course_id) {
-                             if (!existingNodes.has(Number(course_id))) {
-                                 let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
-                                 graphvizParts.push(courseAttrs);
-                                 existingNodes.add(Number(course_id));
-                             }
+        let alias_url = "https://flyingworkshop.github.io/ExploreCoursesGraph/cache/course_ids" + year + ".json";
 
-                             let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
-                             graphvizParts.push(prereqAttrs);
-                             existingNodes.add(prereq);
-                             graphvizParts.push(prereq + " -> " + course_id + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
-                         }
-                     });
+        $.getJSON(url, function (data) {
+            let target_id = "";
+
+            $.getJSON(alias_url, function (alias_data) {
+                let course_name = deptCode + " " + courseCode;
+                $.each(alias_data, function (id, alias_list) {
+                    if (alias_list.includes(course_name)) {
+                        target_id = id;
+                        return false;
+                    }
                 });
-             }
-         });
 
-        let graphvizString = graphvizParts.join(" ") + "}";
-        d3.select("#graph").graphviz().renderDot(graphvizString);
-    });
+                $.each(data, function (course_id, course_data) {
+                    if (course_id === target_id) {
+                        deptCode = course_data.subject;
+                        let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
+                        graphvizParts.push(courseAttrs);
+                        existingNodes.add(Number(course_id));
+
+                        $.each(course_data.prerequisites, function (i, prereq) {
+                            $.each(data, function (prereq_id, prereq_data) {
+                                if (prereq === Number(prereq_id) && prereq_id !== course_id) {
+                                    let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
+                                    graphvizParts.push(prereqAttrs);
+                                    existingNodes.add(prereq);
+                                    graphvizParts.push(prereq + " -> " + course_id + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
+                                }
+                            });
+                        });
+                    }
+                });
+
+                $.each(data, function (course_id, course_data) {
+                    if (course_data.prerequisites.includes(Number(target_id))) {
+                        if (!existingNodes.has(Number(course_id))) {
+                            let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
+                            graphvizParts.push(courseAttrs);
+                            existingNodes.add(Number(course_id));
+                        }
+                        graphvizParts.push(target_id + " -> " + course_id + ' [color="' + colorMap.get(deptCode) + 'BE"]');
+                    }
+                });
+                let graphvizString = graphvizParts.join(" ") + "}";
+                d3.select("#graph").graphviz().renderDot(graphvizString);
+            });
+        });
+    } else {
+        const deptCodes = parseDepartmentQuery(text);
+
+        for (const deptCode of deptCodes) {
+            colorMap.set(deptCode, getRandomColorAttr());
+        }
+        $.getJSON(url, function (data) {
+            $.each(data, function (course_id, course_data) {
+                if (deptCodes.has(course_data.subject)) {
+                    $.each(course_data.prerequisites, function (i, prereq) {
+                        $.each(data, function (prereq_id, prereq_data) {
+                            if (prereq === Number(prereq_id) && prereq_id !== course_id) {
+                                if (!existingNodes.has(Number(course_id))) {
+                                    let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
+                                    graphvizParts.push(courseAttrs);
+                                    existingNodes.add(Number(course_id));
+                                }
+                                let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
+                                graphvizParts.push(prereqAttrs);
+                                existingNodes.add(prereq);
+                                graphvizParts.push(prereq + " -> " + course_id + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
+                            }
+                        });
+                    });
+                }
+            });
+            let graphvizString = graphvizParts.join(" ") + "}";
+            d3.select("#graph").graphviz().renderDot(graphvizString);
+        });
+    }
 });
