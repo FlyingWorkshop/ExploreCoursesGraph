@@ -36,6 +36,33 @@ function parseDepartmentQuery(text) {
     return deptCodes;
 }
 
+function parseCourseNameQuery(text) {
+    const courseNames = new Set();
+    const parts = text.replace(" ", "").toUpperCase().split(",");
+    for (let s of parts) {
+        let subject = s.match(/\D+/)[0];
+        let code = s.slice(s.indexOf(subject) + subject.length, s.length);
+        let courseName = subject + " " + code;
+        courseNames.add(courseName);
+    }
+    return courseNames;
+}
+
+function addNode(courseData, colorMap, year,existingNodes, graphvizParts) {
+    let courseAttrs = makeNodeAttrs(colorMap, year, courseData);
+    graphvizParts.push(courseAttrs);
+    existingNodes.add(Number(courseData.course_id));
+}
+
+function printSet(s) {
+    let temp = [];
+    for (let elem of s) {
+        temp.push(elem);
+    }
+    alert(temp);
+}
+
+
 document.getElementById("myButton").addEventListener("click", function() {
     // construct the URL
     let year = document.getElementById("years").value;
@@ -47,59 +74,79 @@ document.getElementById("myButton").addEventListener("click", function() {
     let graphvizParts = ['digraph {graph [rankdir=LR, ranksep=0.3, nodesep=0.2] node [shape=record, style=filled] edge [arrowsize=0.5]'];
 
     if (/\d/.test(text)) {
-        let deptCode = text.match(/\D+/)[0];
-        let courseCode = text.slice(text.indexOf(deptCode) + deptCode.length, text.length);
-        deptCode = deptCode.trim().toUpperCase();
-        courseCode = courseCode.trim().toUpperCase();
-
-        let alias_url = "https://flyingworkshop.github.io/ExploreCoursesGraph/cache/course_ids" + year + ".json";
-
-        $.getJSON(url, function (data) {
-            let target_id = "";
-
-            $.getJSON(alias_url, function (alias_data) {
-                let course_name = deptCode + " " + courseCode;
-                $.each(alias_data, function (id, alias_list) {
-                    if (alias_list.includes(course_name)) {
-                        target_id = id;
-                        return false;
+        const courseNames = parseCourseNameQuery(text);
+        const courseIDs = new Set();
+        let aliasesURL = "https://flyingworkshop.github.io/ExploreCoursesGraph/cache/course_ids" + year + ".json";
+        $.getJSON(aliasesURL, function(aliasData) {
+            // get all courseIDs
+            $.each(aliasData, function (aliasID, aliasList) {
+                for (let aliasCourseName of aliasList) {
+                    if (courseNames.has(aliasCourseName)) {
+                        courseIDs.add(aliasID);
                     }
+                }
+            });
+
+
+            const processing = new Set();
+            for (let courseID of courseIDs) {
+                processing.add(courseID);
+            }
+            // printSet(processing);
+            const processed = new Set();
+
+            const validCourseIDs = new Set();
+
+            $.getJSON(url, function (data) {
+
+                $.each(data, function(courseID, _) {
+                    validCourseIDs.add(courseID);
                 });
 
-                $.each(data, function (course_id, course_data) {
-                    if (course_id === target_id) {
-                        deptCode = course_data.subject;
-                        let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
-                        graphvizParts.push(courseAttrs);
-                        existingNodes.add(Number(course_id));
+                while (processing.size !== 0) {
+                    $.each(data, function (courseID, courseData) {
+                        if (processing.has(courseID)) {
+                            processing.delete(courseID);
+                            // printSet(processing);
+                            if (!existingNodes.has(Number(courseID))) {
+                                addNode(courseData, colorMap, year, existingNodes, graphvizParts);
+                            }
+                            processed.add(courseID);
 
-                        $.each(course_data.prerequisites, function (i, prereq) {
-                            $.each(data, function (prereq_id, prereq_data) {
-                                if (prereq === Number(prereq_id) && prereq_id !== course_id) {
-                                    let prereqAttrs = makeNodeAttrs(colorMap, year, prereq_data);
-                                    graphvizParts.push(prereqAttrs);
-                                    existingNodes.add(prereq);
-                                    graphvizParts.push(prereq + " -> " + course_id + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
+                            for (let prereqID of courseData.prerequisites) {
+                                if (validCourseIDs.has(prereqID.toString())) {
+                                    $.each(data, function (id, prereqData) {
+                                        if (Number(id) === prereqID) {
+                                            if (!existingNodes.has(prereqID)) {
+                                                addNode(prereqData, colorMap, year, existingNodes, graphvizParts);
+                                            }
+                                            if (id !== courseID) {
+                                                graphvizParts.push(prereqID.toString() + " -> " + courseID + ' [color="' + colorMap.get(prereqData.subject) + 'BE"]');
+                                            }
+                                            return false;
+                                        }
+                                    });
+                                    // graphvizParts.push(prereqID.toString() + " -> " + courseID + ' [color="' + colorMap.get(prereq_data.subject) + 'BE"]');
                                 }
-                            });
-                        });
-                    }
-                });
-
-                $.each(data, function (course_id, course_data) {
-                    if (course_data.prerequisites.includes(Number(target_id))) {
-                        if (!existingNodes.has(Number(course_id))) {
-                            let courseAttrs = makeNodeAttrs(colorMap, year, course_data);
-                            graphvizParts.push(courseAttrs);
-                            existingNodes.add(Number(course_id));
+                                if (!processed.has(prereqID.toString())) {
+                                    processing.add(prereqID.toString());
+                                }
+                            }
                         }
-                        graphvizParts.push(target_id + " -> " + course_id + ' [color="' + colorMap.get(deptCode) + 'BE"]');
+                    });
+
+                    for (let courseID of processing) {
+                        if (!validCourseIDs.has(courseID)) {
+                            processing.delete(courseID);
+                            processed.add(courseID);
+                        }
                     }
-                });
+                }
                 let graphvizString = graphvizParts.join(" ") + "}";
                 d3.select("#graph").graphviz().renderDot(graphvizString);
             });
         });
+
     } else {
         const deptCodes = parseDepartmentQuery(text);
 
