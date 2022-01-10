@@ -10,11 +10,17 @@
 <div>
     <p>
         Instructions:
+        <br>
         Select an academic year and then enter a query.
-
-        Currently, two types of queries are supported:
-        (1) Department query: Enter a department code (like "ECON", "MATH", "BIO") or multiple departments (like "ME, EE, CS"). This will create a graph of all of the courses in the department and each course's 1-layer deep prerequisites.
-        (2) Class query: Enter a class name (like "MATH 51" or class names (like "CS 229, MATH 171"). This will create a graph of all the courses specified (if they are valid course names) and graph all perquisites for the course. It will also graph prerequisites for prerequisites.
+        <br>
+        <br>
+        Query Types:
+        <ul>
+        <li> Department Query: Enter a department code (e.g. "ECON", "MATH", "BIO") or multiple departments (e.g. "ME, EE, CS"). This will create a graph of all the courses in the department and their prerequisites (1-layer deep).
+    </li>
+        <li> Class Query: Enter a class name (e.g. "MATH 51") or class names (e.g. "CS 229, MATH 171"). This will create a graph of all the courses specified and graph all perquisites for the course (max layers).
+    </li>
+        </ul>
     </p>
     <select name="years" id="years">
         <option value="2021-2022">2021-2022</option>
