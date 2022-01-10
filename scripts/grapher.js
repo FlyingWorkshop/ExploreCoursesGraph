@@ -38,7 +38,7 @@ function parseDepartmentQuery(text) {
 
 function parseCourseNameQuery(text) {
     const courseNames = new Set();
-    const parts = text.replace(" ", "").toUpperCase().split(",");
+    const parts = text.replaceAll(" ", "").toUpperCase().split(",");
     for (let s of parts) {
         let subject = s.match(/\D+/)[0];
         let code = s.slice(s.indexOf(subject) + subject.length, s.length);
@@ -80,13 +80,10 @@ document.getElementById("myButton").addEventListener("click", function() {
         $.getJSON(aliasesURL, function(aliasData) {
             // get all courseIDs
             $.each(aliasData, function (aliasID, aliasList) {
-                for (let aliasCourseName of aliasList) {
-                    if (courseNames.has(aliasCourseName)) {
-                        courseIDs.add(aliasID);
-                    }
+                if (aliasList.some(alias => courseNames.has(alias))) {
+                    courseIDs.add(aliasID);
                 }
             });
-
 
             const processing = new Set();
             for (let courseID of courseIDs) {
